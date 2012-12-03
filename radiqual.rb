@@ -6,9 +6,9 @@ require 'optparse'
 options ={}
 optparse = OptionParser.new { |opts|
     opts.banner = <<-EOS
-Usage: ruby rad_aligner.rb -c <cut site cohesive end sequence> -s <cut site sticky end sequence> -t </path/to/fasta/file/with/rad/tags> -o </path/to/output/dir> </path/to/fasta/file/with/contigs/1> [ ... </path/to/fasta/file/with/contigs/n>]
+Usage: ruby radiqual.rb -c <cut site cohesive end sequence> -s <cut site sticky end sequence> -t </path/to/fasta/file/with/rad/tags> -o </path/to/output/dir> </path/to/fasta/file/with/contigs/1> [ ... </path/to/fasta/file/with/contigs/n>]
 
-Example: ruby rad_aligner.rb -c C -s CGTAG -t ~/tmp/mock_rad_tags.fasta -o ~/tmp/ ~/tmp/mock_contigs.fasta
+Example: ruby radiqual.rb -c C -s CGTAG -t ~/tmp/mock_rad_tags.fasta -o ~/tmp/ ~/tmp/mock_contigs.fasta
     EOS
     opts.on('-h','--help','Display this screen'){
         puts opts
