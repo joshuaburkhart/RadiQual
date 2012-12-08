@@ -313,7 +313,7 @@ assembly_scores.each { |a|
     sleep(1) #assuring a new Time
     %x(bowtie-build #{contigs_fa_file} #{bowtie_idx_name})
     assem_dir = contigs_fa_file.strip.sub(".","_").sub("/","-")
-    assem_vid = "#{assem_dir}/#{bowtie_idx_name}" 
+    assem_vid = "#{out_dir}/#{assem_dir}/#{bowtie_idx_name}" 
     %x(mkdir #{assem_dir})
 
     a.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} 2>&1))
