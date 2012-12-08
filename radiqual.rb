@@ -6,6 +6,8 @@ require 'optparse'
 options ={}
 optparse = OptionParser.new { |opts|
     opts.banner = <<-EOS
+Note: this program requires bowtie and samtools exist in the $PATH
+
 Usage: ruby radiqual.rb -c <cut site cohesive end sequence> -s <cut site sticky end sequence> -t </path/to/fasta/file/with/rad/tags> -o </path/to/output/dir> </path/to/fasta/file/with/contigs/1> [ ... </path/to/fasta/file/with/contigs/n>]
 
 Example: ruby radiqual.rb -c C -s CGTAG -t ~/tmp/mock_rad_tags.fasta -o ~/tmp/ ~/tmp/mock_contigs.fasta
@@ -26,8 +28,15 @@ Example: ruby radiqual.rb -c C -s CGTAG -t ~/tmp/mock_rad_tags.fasta -o ~/tmp/ ~
     opts.on('-t','--tag_file FILE','File Containing List of RAD Tags FILE') { |file|
         options[:rad_tag_file] = file
     }
-    options[:out_dir] = "."
+    options[:out_dir] = "radiqual_out"
     opts.on('-o','--out_dir DIR','Directory to write output files to DIR') { |dir|
+        if(File.exists? dir)
+            if(!File.directory? dir)
+                dir = "#{dir}_dir"
+            end
+        else
+            %x(mkdir -p #{dir})
+        end
         options[:out_dir] = dir
     }
 }
@@ -312,9 +321,16 @@ assembly_scores.each { |a|
     bowtie_idx_name = Time.new.to_f.to_s.sub('.','_')
     sleep(1) #assuring a new Time
     %x(bowtie-build #{contigs_fa_file} #{bowtie_idx_name})
-    assem_dir = contigs_fa_file.strip.sub(".","_").sub("/","-")
-    assem_vid = "#{out_dir}/#{assem_dir}/#{bowtie_idx_name}" 
-    %x(mkdir #{assem_dir})
+    assem_dir_name = contigs_fa_file.strip.sub(".","_").sub("/","-")
+    assem_dir = "#{out_dir}/#{assem_dir_name}"
+    assem_vid = "#{assem_dir}/#{bowtie_idx_name}" 
+    if(File.exists? assem_dir)
+        if(!File.directory? assem_dir)
+            assem_dir = "#{assem_dir}_dir"
+        end
+    else
+        %x(mkdir #{assem_dir})
+    end
 
     a.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} 2>&1))
     %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
