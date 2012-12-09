@@ -329,7 +329,7 @@ assembly_scores.each { |a|
             assem_dir = "#{assem_dir}_dir"
         end
     else
-        %x(mkdir #{assem_dir})
+        %x(mkdir -p #{assem_dir})
     end
 
     a.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} 2>&1))
