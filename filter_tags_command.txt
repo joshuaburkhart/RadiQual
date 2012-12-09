@@ -1,0 +1,1 @@
+cat raw_stacks_6.tsv.no_crs | grep -P '^[0-9]+[\s]+[ACTG]+[\s]+[0-9]+[\s]+[0-9]+[\s]+1[\s]+' | awk -F' ' '{print ">"$1"\n"$2}'
