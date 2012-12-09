@@ -19,3 +19,7 @@ Visualization Quick Start
     *NOTE: Be sure the index (.bam.bai) file is in the same directory as the .bam file loaded.
 
 5. Review the assembly alignments produced by RadiQual for the loaded genome assembly.
+
+    *NOTE: It may be helpful to see all the bases in the aligned track.
+
+    Context Click (on track) -> Show all bases
