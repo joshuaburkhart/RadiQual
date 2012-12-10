@@ -5,7 +5,7 @@
 index=0;
 while read line;
 do
-    echo "$index $line" >> rad_tags.idx.txt
+    echo -e ">$index\n$line" >> rad_tags.idx.txt
     index=$((index+1))
     echo -n "."
 done < $1

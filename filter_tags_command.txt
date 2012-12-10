@@ -1,5 +1,5 @@
 #ustacks RAD format
-cat KC.tags.tsv | grep -P '^[0-9]+[\s]+[0-9]+[\s]+[0-9]+[\s]+[a-z]+[\s]+[0-9]+[\s]+[0-9a-zA-Z_-]+[\s]+[ACTG]+[\s]+' | awk -F' ' '{print ">"$(NF-1)"\n"$NF}'
+cat KC.tags.tsv | grep -P '^[0-9]+[\s]+[0-9]+[\s]+[0-9]+[\s]+[a-z]+[\s]+[0-9]+[\s]+[0-9a-zA-Z_-]+[\s]+[ACTG]+[\s]+' | awk -F' ' '{print $NF}' | uniq >> rad_tags.txt
 
 #Streisfeld's RAD format?
 cat raw_stacks_6.tsv.no_crs | grep -P '^[0-9]+[\s]+[ACTG]+[\s]+[0-9]+[\s]+[0-9]+[\s]+1[\s]+' | awk -F' ' '{print ">"$1"\n"$2}'
