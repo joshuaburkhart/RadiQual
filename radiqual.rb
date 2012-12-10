@@ -321,7 +321,7 @@ assembly_scores.each { |a|
     bowtie_idx_name = Time.new.to_f.to_s.sub('.','_')
     sleep(1) #assuring a new Time
     %x(bowtie-build #{contigs_fa_file} #{bowtie_idx_name})
-    assem_dir_name = contigs_fa_file.strip.sub(".","_").sub("/","-")
+    assem_dir_name = contigs_fa_file.strip.insert(0,Time.new.to_s).gsub(".","_").gsub("/","-").gsub(" ","_")
     assem_dir = "#{out_dir}/#{assem_dir_name}"
     assem_vid = "#{assem_dir}/#{bowtie_idx_name}" 
     if(File.exists? assem_dir)
