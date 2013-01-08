@@ -45,7 +45,6 @@ The output is in "/home13/jburkhar/research/Streisfeld/out/align_out/radiqual_ou
     
     f. with this technique you can review every single alignment made against each assembly
 
-
 2. view the chosen genome assembly
 
     a. open IGV
