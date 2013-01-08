@@ -7,7 +7,9 @@ Visualization Overview
 ----------------------
 
 1. Review assembly scores produced by RadiQual.
+
 2. Open IGV.
+
 3. Load previously produced genome assembly fasta file as 'genome.'
 
         File -> Import Genome
@@ -32,15 +34,21 @@ The output is in "/home13/jburkhar/research/Streisfeld/out/align_out/radiqual_ou
 1. read the "assembly_scores.###.txt" file to see how the assemblies compare to each other (the "###" is just because Im lazy)
 
     a. read the file with less by typing "less assembly_scores.###.txt"
+    
     b. press '/' (the forward slash key) to enter search mode
+    
     c. type "FILE" and press 'enter' (or 'return' on a mac)
+    
     d. press 'n' to go to the next occurrence (these are the different assemblies)
+    
     e. hold 'shift' and press 'n' to go to the previous occurrence
+    
     f. with this technique you can review every single alignment made against each assembly
 
 2. view the chosen genome assembly
 
     a. open IGV
+    
     b. load the fasta file for the assembly of your choice by navigating to the actual velvet output (this is going to be in "/home13/jburkhar/research/Streisfeld/out/velvet_out")
     
         download it from ACISS and import into IGV:
