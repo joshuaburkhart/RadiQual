@@ -10,19 +10,19 @@ Visualization Overview
 2. Open IGV.
 3. Load previously produced genome assembly fasta file as 'genome.'
 
-    File -> Import Genome
+        File -> Import Genome
 
 4. Load .bam file produced by RadiQual for loaded assembly.
 
-    File -> Load from File
+        File -> Load from File
 
-    *NOTE: Be sure the index (.bam.bai) file is in the same directory as the .bam file loaded.
+        *NOTE: Be sure the index (.bam.bai) file is in the same directory as the .bam file loaded.
 
 5. Review the assembly alignments produced by RadiQual for the loaded genome assembly.
 
-    *NOTE: It may be helpful to see all the bases in the aligned track.
+        *NOTE: It may be helpful to see all the bases in the aligned track.
 
-    Context Click (on track) -> Show all bases
+        Context Click (on track) -> Show all bases
 
 Visualization Example Walkthrough
 ---------------------------------
@@ -55,10 +55,9 @@ The output is in "/home13/jburkhar/research/Streisfeld/out/align_out/radiqual_ou
 
 3. read the "assembly_aligns.###.txt" file to see which contigs or alignments you might like to view using the same "less" instructions as before.. except searching for "ASSEMLBY" or "CONTIG" or "LOCUS" (IGV allows for individual contig visualization)
 
-    It may be helpful to see all the bases in the aligned track:
+        It may be helpful to see all the bases in the aligned track:
     
-    context click (right click) on track -> Show all bases
-    
+        context click (right click) on track -> Show all bases
 
 Got questions? Forget it!
     
