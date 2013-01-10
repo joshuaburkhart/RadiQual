@@ -3,6 +3,17 @@ RadiQual
 
 a project to assess genome assembly quality using RAD sequence alignment
 
+Instructions
+------------
+
+1. Ensure both bowtie and samtools are installed and in the $PATH as they are required for this program to run.
+
+2. Review http://en.wikipedia.org/wiki/List_of_restriction_enzyme_cutting_sites to assure correct RE cohesive and sticky end sequences and specify them using the '-c' and '-s' options, respectively.
+
+3. Specify a fasta file with each entry containing a unique RAD tag using the '-t' option. The included index_tags.sh script and commands listed in filter_tags.txt (also included) may be useful in creating such a file.
+
+4. Specify one or more fasta files containing contigs for a genome assembly. Velvet is the only supported assembler at this time (It lists assembly contigs in files named contigs.fa).
+
 Visualization Overview
 ----------------------
 
