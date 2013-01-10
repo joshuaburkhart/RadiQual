@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#Usage: ./rad_indexer.sh <unindexed rad file>
+#Usage: ./index_tags.sh <unindexed rad file>
 
 index=0;
 while read line;
