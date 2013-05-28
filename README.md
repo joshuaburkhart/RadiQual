@@ -6,15 +6,39 @@ a project to assess genome assembly quality using RAD sequence alignment
 Instructions
 ------------
 
-1. Filter RAD tags using the correct command from filter_tags.txt.
+1. Filter RAD tags using the correct command from Radiqual/filter_tags.txt.
+   
+   $ cat /home11/mmiller/Wyeomyia/output/ustacks_out/KC.tags.tsv | grep -P '^[0-9]+[\s]+[0-9]+[\s]+[0-9]+[\s]+[a-z]+[\s]+[0-9]+[\s]+[0-9a-zA-Z_-]+[\s]+[ACTG]+[\s]+' | awk -F' ' '{print $NF}' | uniq | sort > /home11/mmiller/Wyeomyia/output/ustacks_out/rad_tags.txt
 
-2. Ensure both bowtie and samtools are installed and in the $PATH as they are required for this program to run.
+2. Review http://en.wikipedia.org/wiki/List_of_restriction_enzyme_cutting_sites or http://rebase.neb.com/rebase/rebase.html to find the correct restriction enzyme cut (recognition), cohesive end, and sticky end sequences.
 
-3. Review http://en.wikipedia.org/wiki/List_of_restriction_enzyme_cutting_sites to assure correct RE cohesive and sticky end sequences and specify them using the '-c' and '-s' options, respectively.
+3. Confirm actual restriction enzyme sequence matches expected.
 
-4. Specify a fasta file with each entry containing a unique RAD tag using the '-t' option. The included index_tags.sh script and commands listed in filter_tags.txt (also included) may be useful in creating such a file.
+   $ head -n1 rad_tags.txt && tail -n1 rad_tags.txt
 
-5. Specify one or more fasta files containing contigs for a genome assembly. Velvet is the only supported assembler at this time (It lists assembly contigs in files named contigs.fa).
+4. Index filtered RAD tags with Radiqual/index_tags.sh.
+
+   $ index_tags.sh rad_tags.txt
+
+5. Ensure both bowtie and samtools are installed and in the $PATH as they are required for this program to run.
+
+   $ qsub -IXl nodes=1:ppn=32 -q fatnodes
+
+   $ module load bowtie
+
+   $ bowtie --version
+
+   $ module load samtools
+
+   $ samtools
+
+6. Review Radiqual/radiqual.rb options and example usage with -h.
+
+   $ radiqual.rb -h
+
+7. Execute Radiqual/radiqual.rb with correct options. *NOTE: The contigs file must match Velvet's contigs.fa format.
+
+   $ radiqual.rb -c CC -s TGCAGG -t /home11/mmiller/Wyeomyia/output/ustacks_out/rad_tags.idx.txt -o /home11/mmiller/Wyeomyia/output/radiqual_out/ /home11/mmiller/Wyeomyia/output/velvet_out/velvet-wy_unfiltered_combined_reads_diginorm_paired.fastq.keep_k\=55_e\=19/contigs.fa
 
 Visualization Overview
 ----------------------
