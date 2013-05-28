@@ -8,33 +8,33 @@ Instructions
 
 1. Filter RAD tags using the correct command from Radiqual/filter_tags.txt.
    
-   $ cat /home11/mmiller/Wyeomyia/output/ustacks_out/KC.tags.tsv | grep -P '^[0-9]+[\s]+[0-9]+[\s]+[0-9]+[\s]+[a-z]+[\s]+[0-9]+[\s]+[0-9a-zA-Z_-]+[\s]+[ACTG]+[\s]+' | awk -F' ' '{print $NF}' | uniq | sort > /home11/mmiller/Wyeomyia/output/ustacks_out/rad_tags.txt
+        $ cat /home11/mmiller/Wyeomyia/output/ustacks_out/KC.tags.tsv | grep -P '^[0-9]+[\s]+[0-9]+[\s]+[0-9]+[\s]+[a-z]+[\s]+[0-9]+[\s]+[0-9a-zA-Z_-]+[\s]+[ACTG]+[\s]+' | awk -F' ' '{print $NF}' | uniq | sort > /home11/mmiller/Wyeomyia/output/ustacks_out/rad_tags.txt
 
 2. Review http://en.wikipedia.org/wiki/List_of_restriction_enzyme_cutting_sites or http://rebase.neb.com/rebase/rebase.html to find the correct restriction enzyme cut (recognition), cohesive end, and sticky end sequences.
 
 3. Confirm actual restriction enzyme sequence matches expected.
 
-   $ head -n1 rad_tags.txt && tail -n1 rad_tags.txt
+        $ head -n1 rad_tags.txt && tail -n1 rad_tags.txt
 
 4. Index filtered RAD tags with Radiqual/index_tags.sh.
 
-   $ index_tags.sh rad_tags.txt
+        $ index_tags.sh rad_tags.txt
 
 5. Ensure both bowtie and samtools are installed and in the $PATH as they are required for this program to run.
 
-   $ qsub -IXl nodes=1:ppn=32 -q fatnodes
+        $ qsub -IXl nodes=1:ppn=32 -q fatnodes
 
-   $ module load bowtie
+        $ module load bowtie
 
-   $ bowtie --version
+        $ bowtie --version
 
-   $ module load samtools
+        $ module load samtools
 
-   $ samtools
+        $ samtools
 
 6. Review Radiqual/radiqual.rb options and example usage with -h.
 
-   $ radiqual.rb -h
+        $ radiqual.rb -h
 
 7. Execute Radiqual/radiqual.rb with correct options. *NOTE: The contigs file must match Velvet's contigs.fa format.
 
