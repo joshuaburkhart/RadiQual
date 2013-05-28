@@ -36,9 +36,11 @@ Instructions
 
         $ radiqual.rb -h
 
-7. Execute Radiqual/radiqual.rb with correct options. *NOTE: The contigs file must match Velvet's contigs.fa format.
+7. Execute Radiqual/radiqual.rb with correct options.
 
-   $ radiqual.rb -c CC -s TGCAGG -t /home11/mmiller/Wyeomyia/output/ustacks_out/rad_tags.idx.txt -o /home11/mmiller/Wyeomyia/output/radiqual_out/ /home11/mmiller/Wyeomyia/output/velvet_out/velvet-wy_unfiltered_combined_reads_diginorm_paired.fastq.keep_k\=55_e\=19/contigs.fa
+        *NOTE: The contigs file must match Velvet's contigs.fa format.
+
+        $ radiqual.rb -c CC -s TGCAGG -t /home11/mmiller/Wyeomyia/output/ustacks_out/rad_tags.idx.txt -o /home11/mmiller/Wyeomyia/output/radiqual_out/ /home11/mmiller/Wyeomyia/output/velvet_out/velvet-wy_unfiltered_combined_reads_diginorm_paired.fastq.keep_k\=55_e\=19/contigs.fa
 
 Visualization Overview
 ----------------------
@@ -53,9 +55,9 @@ Visualization Overview
 
 4. Load .bam file produced by RadiQual for loaded assembly.
 
-        File -> Load from File
-
         *NOTE: Be sure the index (.bam.bai) file is in the same directory as the .bam file loaded.
+
+        File -> Load from File
 
 5. Review the assembly alignments produced by RadiQual for the loaded genome assembly.
 
