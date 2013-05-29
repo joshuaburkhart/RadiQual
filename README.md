@@ -38,9 +38,13 @@ Instructions
 
 7. Execute Radiqual/radiqual.rb with correct options.
 
-        *NOTE: The contigs file must match Velvet's contigs.fa format.
+        *NOTE: This program has been tested using Velvet 1.2.07 contigs.fa files.
 
         $ radiqual.rb -c CC -s TGCAGG -t /home11/mmiller/Wyeomyia/output/ustacks_out/rad_tags.idx.txt -o /home11/mmiller/Wyeomyia/output/radiqual_out/ /home11/mmiller/Wyeomyia/output/velvet_out/velvet-wy_unfiltered_combined_reads_diginorm_paired.fastq.keep_k\=55_e\=19/contigs.fa
+
+        *NOTE: Multiple genome assemblies can be compared as below.
+
+        $ radiqual.rb -c CC -s TGCAGG -t /home11/mmiller/Wyeomyia/output/ustacks_out/rad_tags.idx.txt -o /home11/mmiller/Wyeomyia/output/radiqual_out/ /home11/mmiller/Wyeomyia/output/velvet_out/velvet-wy_unfiltered_combined_reads_diginorm_paired.fastq.keep_k\=55_e\=19/contigs.fa /home11/mmiller/Wyeomyia/output/velvet_out/velvet-wy_unfiltered_combined_reads_diginorm_paired.fastq.keep_k\=53_e\=19/contigs.fa /home11/mmiller/Wyeomyia/output/velvet_out/velvet-wy_unfiltered_combined_reads_diginorm_paired.fastq.keep_k\=31_e\=22/contigs.fa
 
 Visualization Overview
 ----------------------
