@@ -110,6 +110,7 @@ The output is in "/home13/jburkhar/research/Streisfeld/out/align_out/radiqual_ou
     
         context click (right click) on track -> Show all bases
 
-Got questions? Forget it!
-    
-Kidding, send any feedback to burkhart@cs.uoregon.edu so I can make improvements.
+Questions & Feedback
+--------------------
+
+Please send related correspondence to burkhajo@ohsu.edu
