@@ -110,6 +110,24 @@ The output is in "/home13/jburkhar/research/Streisfeld/out/align_out/radiqual_ou
     
         context click (right click) on track -> Show all bases
 
+Example Data
+------------
+
+The included example file, KC.tags.csv, contains 51,452 unique RAD markers for a total coverage of 2,572,600 bp.
+
+```
+$ cat KC.tags.tsv | cut -d$'\t' -f 10 | uniq | wc -l
+   51452
+$ cat KC.tags.tsv | cut -d$'\t' -f 10 | wc -l
+  397301
+$ head -n5 KC.tags.tsv
+0	0	0		0	+	consensus			TGCAGGGAAGCTATTAATTTAGACCTGGCGTCACGGTGTACAGGGCATG	0	0	1
+0	0	0				model			OOOOOOOOOOOOOOOOOOEOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
+0	0	0				primary	0	TTAAT_8_0001_352_1040	TGCAGGGAAGCTATTAATTTAGACCTGACGTCACGGTGTACAGGGCATG
+0	0	0				primary	0	TTAAT_8_0002_711_340	TGCAGGGAAGCTATTAATTTAGACCTGACGTCACGGTGTACAGGGCATG
+0	0
+```
+
 Questions & Feedback
 --------------------
 
