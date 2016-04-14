@@ -1,3 +1,7 @@
+.idea/*
+.DS_Store
+data/output/*
+
 *.gem
 *.swp
 *.rbc

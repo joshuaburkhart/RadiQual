@@ -1,0 +1,6 @@
+require "#{File.dirname(__FILE__)}/assembly_alignment"
+require "#{File.dirname(__FILE__)}/assembly_score"
+require "#{File.dirname(__FILE__)}/contig_alignment"
+require "#{File.dirname(__FILE__)}/cut_site_alignment"
+require "#{File.dirname(__FILE__)}/locus_alignment"
+require "#{File.dirname(__FILE__)}/rad_tag_alignment"

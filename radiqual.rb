@@ -1,60 +1,72 @@
 #!/usr/bin/ruby
 
+# This program has been tested with the following Ruby, Bowtie, and Samtools versions
+
+# Ruby
+# ruby 1.8.7 (2009-06-12 patchlevel 174) [i686-darwin9.7.0]
+# ruby 2.0.0p648 (2015-12-16 revision 53162) [universal.x86_64-darwin15]
+
+# Bowtie
+# bowtie version 0.12.8
+
+# Samtools
+# Version: 0.1.18 (r982:295)
+
 require 'time'
 require 'optparse'
-require "#{File.dirname(__FILE__)}/lib/radpack"
+require "#{File.dirname(__FILE__)}/src/lib/radpack"
 
 BOWTIE_TEST = %x(bowtie 2>&1)
 SAM_TEST = %x(samtools 2>&1)
-if(BOWTIE_TEST.include?("command not found") || SAM_TEST.include?("command not found"))
-    puts "Both bowtie and samtools must be installed and in the $PATH for this program to run."
-    puts "Aborting..."
-    exit
+if BOWTIE_TEST.include?('command not found') || SAM_TEST.include?('command not found')
+  puts 'Both bowtie and samtools must be installed and in the $PATH for this program to run.'
+  puts 'Aborting...'
+  exit
 end
 
 options ={}
 optparse = OptionParser.new { |opts|
-    opts.banner = <<-EOS
+  opts.banner = <<-EOS
 Usage: ruby radiqual.rb -c <cut site cohesive end sequence> -s <cut site sticky end sequence> -t </path/to/fasta/file/with/rad/tags> -o </path/to/output/dir> </path/to/fasta/file/with/contigs/1> [ ... </path/to/fasta/file/with/contigs/n>]
 
-Example: radiqual.rb -c C -s CGTAG -t ~/tmp/mock_rad_tags.fasta -o ~/tmp/ ~/tmp/mock_contigs.fasta
-    EOS
-    opts.on('-h','--help','Display this screen'){
-        puts opts
-        exit
-    }
-    options[:cohesive_end] = nil
-    opts.on('-c','--cohesive SEQ','Cohesive End Sequence SEQ') { |seq|
-        options[:cohesive_end] = seq
-    }
-    options[:sticky_end] = nil
-    opts.on('-s','--sticky SEQ','Sticky End Sequence SEQ') { |seq|
-        options[:sticky_end] = seq
-    }
-    options[:rad_tag_file] = nil
-    opts.on('-t','--tag_file FILE','File Containing List of RAD Tags FILE') { |file|
-        options[:rad_tag_file] = file
-    }
-    options[:out_dir] = "radiqual_out"
-    opts.on('-o','--out_dir DIR','Directory to write output files to DIR') { |dir|
-        if(File.exists? dir)
-            if(!File.directory? dir)
-                dir = "#{dir}_dir"
-            end
-        else
-            %x(mkdir -p #{dir})
-        end
-        options[:out_dir] = dir
-    }
+Example:     $ ./radiqual.rb -c C -s CGTAG -t data/input/mock_rad_tags.fasta -o data/output/ data/input/mock_contigs.fasta data/input/mock_contigs2.fasta
+  EOS
+  opts.on('-h', '--help', 'Display this screen') {
+    puts opts
+    exit
+  }
+  options[:cohesive_end] = nil
+  opts.on('-c', '--cohesive SEQ', 'Cohesive End Sequence SEQ') { |seq|
+    options[:cohesive_end] = seq
+  }
+  options[:sticky_end] = nil
+  opts.on('-s', '--sticky SEQ', 'Sticky End Sequence SEQ') { |seq|
+    options[:sticky_end] = seq
+  }
+  options[:rad_tag_file] = nil
+  opts.on('-t', '--tag_file FILE', 'File Containing List of RAD Tags FILE') { |file|
+    options[:rad_tag_file] = file
+  }
+  options[:out_dir] = 'radiqual_out'
+  opts.on('-o', '--out_dir DIR', 'Directory to write output files to DIR') { |dir|
+    if File.exists? dir
+      unless File.directory? dir
+        dir = "#{dir}_dir"
+      end
+    else
+      %x(mkdir -p #{dir})
+    end
+    options[:out_dir] = dir
+  }
 }
 
 optparse.parse!
-if(options[:cohesive_end].nil?)
-    raise OptionParser::MissingArgument,"Cohesive End = \'#{options[:cohesive_end]}\'"
-elsif(options[:sticky_end].nil?)
-    raise OptionParser::MissingArgument,"Sticky End = \'#{options[:sticky_end]}\'"
-elsif(options[:rad_tag_file].nil?)
-    raise OptionParser::MissingArgument,"RAD Tag File = \'#{options[:rad_tag_file]}\'"
+if options[:cohesive_end].nil?
+  raise OptionParser::MissingArgument, "Cohesive End = \'#{options[:cohesive_end]}\'"
+elsif options[:sticky_end].nil?
+  raise OptionParser::MissingArgument, "Sticky End = \'#{options[:sticky_end]}\'"
+elsif options[:rad_tag_file].nil?
+  raise OptionParser::MissingArgument, "RAD Tag File = \'#{options[:rad_tag_file]}\'"
 end
 
 ##########
@@ -74,50 +86,50 @@ puts "COHESIVE END SEQ: #{ce_seq}"
 puts "STICKY END SEQ: #{se_seq}"
 puts "RAD FASTA FILE: #{rad_fasta_file}"
 puts "OUTPUT DIR: #{out_dir}"
-puts "ASSEMBLY FILES: "
+puts 'ASSEMBLY FILES: '
 
 assembly_scores = Array.new
 ARGV.each { |assem_file|
-    puts assem_file
-    assembly_scores << RadPack::AssemblyScore.new(assem_file)
+  puts assem_file
+  assembly_scores << RadPack::AssemblyScore.new(assem_file)
 }
 puts
 
-max_tag_length = -1;
-MISMATCH_CHAR = ">"
-BEST = "--best"
-ROUT = "--refout"
+max_tag_length = -1
+MISMATCH_CHAR = '>'
+BEST = '--best'
+ROUT = '--refout'
 
 rad_tags = File.open(rad_fasta_file)
 rad_fasta_line = rad_tags.gets
-rad_tag_name = "<unknown>"
+rad_tag_name = '<unknown>'
 cut_seq = "#{ce_seq}#{se_seq}"
 se_seq_size = se_seq.size
-puts "validating RAD tags..."
-while(rad_fasta_line)
-    print "."
-    STDOUT.flush
-    if(rad_fasta_line.match(/^>/))
-        rad_tag_name = rad_fasta_line
-    else
-        test_seq = rad_fasta_line[0,se_seq_size]
-        if(!test_seq.match(/^[ATCG]/))
-            puts "MALFORMED FASTA FILE DETECTED"
-            puts "TAG NAME: #{rad_tag_name}"
-            exit 1
-        elsif(test_seq != se_seq)
-            rad_tags.close
-            puts "RAD TAG DOES NOT MATCH SPECIFIED CUT SITE"
-            puts "TAG NAME: #{rad_tag_name}"
-            puts "TAG FIRST #{se_seq_size} BASES: #{test_seq}"
-            puts "SPECIFIED CUT SITE SE SEQ: #{se_seq}"
-            exit 1
-        end
+puts 'validating RAD tags...'
+while rad_fasta_line
+  print '.'
+  STDOUT.flush
+  if rad_fasta_line.match(/^>/)
+    rad_tag_name = rad_fasta_line
+  else
+    test_seq = rad_fasta_line[0, se_seq_size]
+    if !test_seq.match(/^[ATCG]/)
+      puts 'MALFORMED FASTA FILE DETECTED'
+      puts "TAG NAME: #{rad_tag_name}"
+      exit 1
+    elsif test_seq != se_seq
+      rad_tags.close
+      puts 'RAD TAG DOES NOT MATCH SPECIFIED CUT SITE'
+      puts "TAG NAME: #{rad_tag_name}"
+      puts "TAG FIRST #{se_seq_size} BASES: #{test_seq}"
+      puts "SPECIFIED CUT SITE SE SEQ: #{se_seq}"
+      exit 1
     end
-    if(rad_fasta_line.size > max_tag_length)
-        max_tag_length = rad_fasta_line.size
-    end
-    rad_fasta_line = rad_tags.gets
+  end
+  if rad_fasta_line.size > max_tag_length
+    max_tag_length = rad_fasta_line.size
+  end
+  rad_fasta_line = rad_tags.gets
 end
 puts "\nRAD tags match"
 puts
@@ -130,166 +142,180 @@ assembly_align_ary = Array.new
 cut_seq_size = cut_seq.size
 MAX_MISMATCHES = 3
 
-puts "aligning sequences to reference(s)..."
+puts 'aligning sequences to reference(s)...'
 assembly_scores.each { |a|
-    print "."
-    STDOUT.flush
-    contigs_fa_file = a.name
-    bowtie_idx_name = Time.new.to_f.to_s.sub('.','_')
-    sleep(1) #assuring a new Time
-    %x(bowtie-build #{contigs_fa_file} #{bowtie_idx_name})
-    assem_dir_name = contigs_fa_file.strip.insert(0,"RadiQual_Track_#{bowtie_idx_name}").gsub(".","_").gsub("/","-").gsub(" ","_")
-    assem_dir = "#{out_dir}/#{assem_dir_name}"
-    assem_vid = "#{assem_dir}/#{bowtie_idx_name}" 
-    if(File.exists? assem_dir)
-        if(!File.directory? assem_dir)
-            assem_dir = "#{assem_dir}_dir"
-        end
-    else
-        %x(mkdir -p #{assem_dir})
+  print '.'
+  STDOUT.flush
+  contigs_fa_file = a.name
+  bowtie_idx_name = Time.new.to_f.to_s.sub('.', '_')
+  sleep(1) #assuring a new Time
+  %x(bowtie-build #{contigs_fa_file} #{bowtie_idx_name})
+  assem_dir_name = contigs_fa_file.strip.insert(0, "RadiQual_Track_#{bowtie_idx_name}").gsub('.', '_').gsub('/', '-').gsub(' ', '_')
+  assem_dir = "#{out_dir}/#{assem_dir_name}"
+  assem_vid = "#{assem_dir}/#{bowtie_idx_name}"
+  if File.exists? assem_dir
+    unless File.directory? assem_dir
+      assem_dir = "#{assem_dir}_dir"
     end
+  else
+    %x(mkdir -p #{assem_dir})
+  end
 
-    a.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} 2>&1))
-    %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
-    %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
+  a.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} 2>&1))
+  %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
+  %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
 
-    a.setRadResult(%x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} 2>&1))
-    %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
-    %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_radtags.bam)
+  a.setRadResult(%x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} 2>&1))
+  %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
+  %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_radtags.bam)
 
-    %x(samtools merge #{assem_vid}_merged.bam #{assem_vid}_cutsites.bam #{assem_vid}_radtags.bam)
-    %x(samtools sort #{assem_vid}_merged.bam #{assem_vid}_merged.sorted)
-    %x(samtools index #{assem_vid}_merged.sorted.bam)
-    %x(rm -f #{bowtie_idx_name}.*)
-    %x(rm -f #{assem_vid}.sam)
-    %x(rm -f #{assem_vid}_cutsites.bam)
-    %x(rm -f #{assem_vid}_radtags.bam)
-    %x(rm -f #{assem_vid}_merged.bam)
+  %x(samtools merge #{assem_vid}_merged.bam #{assem_vid}_cutsites.bam #{assem_vid}_radtags.bam)
+  %x(samtools sort #{assem_vid}_merged.bam #{assem_vid}_merged.sorted)
+  %x(samtools index #{assem_vid}_merged.sorted.bam)
+  %x(rm -f #{bowtie_idx_name}.*)
+  %x(rm -f #{assem_vid}.sam)
+  %x(rm -f #{assem_vid}_cutsites.bam)
+  %x(rm -f #{assem_vid}_radtags.bam)
+  %x(rm -f #{assem_vid}_merged.bam)
 
-    assembly_align = RadPack::AssemblyAlignment.new(a.name)
-    tmp_locus_ary = Array.new
-    a.cut_output.each_line { |line|
-        if(!line.match(/^#|Reported/))
-            line_ary = line.split
-            fr = line_ary[1]
-            ref_strand_name = line_ary[2]
-            offset = Integer(line_ary[3])
-            seq = line_ary[4]
-            cut_site_align = RadPack::CutSiteAlignment.new(ref_strand_name,seq,offset,fr)
-            locus_align = RadPack::LocusAlignment.new(cut_site_align)
-            tmp_locus_ary << locus_align
+  assembly_align = RadPack::AssemblyAlignment.new(a.name)
+  tmp_locus_ary = Array.new
+  a.cut_output.each_line { |line|
+    unless line.match(/^#|Reported/)
+      line_ary = line.split
+      fr = line_ary[1]
+      ref_strand_name = line_ary[2]
+      offset = Integer(line_ary[3])
+      seq = line_ary[4]
+      cut_site_align = RadPack::CutSiteAlignment.new(ref_strand_name, seq, offset, fr)
+      locus_align = RadPack::LocusAlignment.new(cut_site_align)
+      tmp_locus_ary << locus_align
+    end
+  }
+
+  a.rad_output.each_line { |line|
+    unless line.match(/^#|Reported/)
+      line_ary = line.split
+      tag_name = line_ary[0]
+      fr = line_ary[1]
+      ref_strand_name = line_ary[2]
+      offset = Integer(line_ary[3])
+      seq = line_ary[4]
+      rad_tag_align = RadPack::RadTagAlignment.new(tag_name, ref_strand_name, seq, offset, fr)
+      locus_name = ref_strand_name
+      if fr == '+'
+        x = offset - ce_seq.size
+        locus_name += "-#{x}"
+      elsif fr == '-'
+        x = (offset + seq.size) - se_seq_size
+        locus_name += "-#{x}"
+      else
+        puts "ERROR: RAD ALIGNMENT DIRECTION '#{fr}' UNRECOGNIZABLE"
+        exit 1
+      end
+
+      tmp_idx = tmp_locus_ary.index { |l| l.name == locus_name }
+      if !tmp_idx.nil?
+        locus_align = tmp_locus_ary[tmp_idx]
+        locus_align.addRadTagAlign(rad_tag_align)
+        if ref_strand_name.match(/length_([0-9]+)_cov/)
+          n = Integer($1)
+        else
+          puts 'WARNING: IRREGULAR CONTIG NAME. REVERTING TO CMD LINE TOOLS FOR PARSING'
+          if %x(uname).strip() == "Linux"
+            n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | grep -Po '(?<=#{ref_strand_name}).+(?=>)' | wc | awk -F' ' '{print $3}'))
+          elsif %x(uname).strip() == "Darwin"
+            n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | perl -nle 'print $& if m{(?<=#{ref_strand_name}).+(?=>)}' | wc | awk -F' ' '{print $3}'))
+          else
+            puts "ERROR: '#{%x(uname)}' OS not supported"
+            exit(1)
+          end
         end
-    }
+        locus_align.n = n
+      else
+        puts 'WARNING: RAD TAG MATCHED LOCUS WITHOUT CUTSITE'
+        puts " RAD TAG: #{rad_tag_align.to_s}"
+        puts " LOCUS: #{locus_name}"
 
-    a.rad_output.each_line { |line|
-        if(!line.match(/^#|Reported/))
-            line_ary = line.split
-            tag_name = line_ary[0]
-            fr = line_ary[1]
-            ref_strand_name = line_ary[2]
-            offset = Integer(line_ary[3])
-            seq = line_ary[4]
-            rad_tag_align = RadPack::RadTagAlignment.new(tag_name,ref_strand_name,seq,offset,fr)
-            locus_name = ref_strand_name
-            if(fr == "+")
-                x = offset - ce_seq.size
-                locus_name += "-#{x}"
-            elsif(fr == "-")
-                x = (offset + seq.size) - se_seq_size
-                locus_name += "-#{x}"
+      end
+    end
+  }
+  tmp_locus_ary.each { |l|
+    if l.rad_tag_align_ary.size < l.expected
+      if l.offset < max_tag_length
+        l.expected -= 1
+      end
+      if l.rad_tag_align_ary.size < l.expected
+        if l.n == 0
+          ref_strand_name = l.ref_strand_name
+          if ref_strand_name.match(/length_([0-9]+)_cov/)
+            n = Integer($1)
+          else
+            puts 'WARNING: IRREGULAR CONTIG NAME. REVERTING TO CMD LINE TOOLS FOR PARSING'
+            if %x(uname).strip() == "Linux"
+            n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | grep -Po '(?<=#{ref_strand_name}).+(?=>)' | wc | awk -F' ' '{print $3}'))
+            elsif %x(uname).strip() == "Darwin"
+              n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | perl -nle 'print $& if m{(?<=#{ref_strand_name}).+(?=>)}' | wc | awk -F' ' '{print $3}'))
             else
-                puts "ERROR: RAD ALIGNMENT DIRECTION '#{fr}' UNRECOGNIZABLE"
-                exit 1
+              puts "ERROR: '#{%x(uname)}' OS not supported"
+              exit(1)
             end
-
-            tmp_idx = tmp_locus_ary.index { |l| l.name == locus_name}
-            if(!tmp_idx.nil?)
-                locus_align = tmp_locus_ary[tmp_idx]
-                locus_align.addRadTagAlign(rad_tag_align)
-                if(ref_strand_name.match(/length_([0-9]+)_cov/))
-                    n = Integer($1)
-                else
-                    puts "WARNING: IRREGULAR CONTIG NAME. REVERTING TO CMD LINE TOOLS FOR PARSING"
-                    n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | grep -Po '(?<=#{ref_strand_name}).+(?=>)' | wc | awk -F' ' '{print $3}'))
-                end
-                locus_align.n = n
-            else
-                puts "WARNING: RAD TAG MATCHED LOCUS WITHOUT CUTSITE"
-                puts " RAD TAG: #{rad_tag_align.to_s}"
-                puts " LOCUS: #{locus_name}"
-
-            end
+          end
+          l.n = n
         end
-    }
-    tmp_locus_ary.each { |l|
-        if(l.rad_tag_align_ary.size < l.expected)
-            if(l.offset < max_tag_length)
-                l.expected -= 1
-            end
-            if(l.rad_tag_align_ary.size < l.expected)
-                if(l.n == 0)
-                    ref_strand_name = l.ref_strand_name
-                    if(ref_strand_name.match(/length_([0-9]+)_cov/))
-                        n = Integer($1)
-                    else
-                        puts "WARNING: IRREGULAR CONTIG NAME. REVERTING TO CMD LINE TOOLS FOR PARSING"
-                        n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | grep -Po '(?<=#{ref_strand_name}).+(?=>)' | wc | awk -F' ' '{print $3}'))
-                    end
-                    l.n = n
-                end
-                if(l.n - l.offset < max_tag_length)
-                    l.expected -= 1
-                end
-            end
+        if l.n - l.offset < max_tag_length
+          l.expected -= 1
         end
-        #puts "l.offset: #{l.offset}"
-        #puts "l.expected: #{l.expected}"
-        #puts "l.n: #{l.n}"
-        if(l.expected > 0)
-            ref_strand_name = l.ref_strand_name
-            idx = assembly_align.contig_ary.index { |c| c.name == ref_strand_name}
-            if(!idx.nil?)
-                contig_align = assembly_align.contig_ary[idx]
-                contig_align.addLocusAlign(l)
-            else 
-                contig_align = RadPack::ContigAlignment.new(ref_strand_name)
-                contig_align.addLocusAlign(l)
-                assembly_align.addContigAlign(contig_align)
-            end
-        end
-    }
-    assembly_align_ary << assembly_align
+      end
+    end
+    #puts "l.offset: #{l.offset}"
+    #puts "l.expected: #{l.expected}"
+    #puts "l.n: #{l.n}"
+    if l.expected > 0
+      ref_strand_name = l.ref_strand_name
+      idx = assembly_align.contig_ary.index { |c| c.name == ref_strand_name }
+      if !idx.nil?
+        contig_align = assembly_align.contig_ary[idx]
+        contig_align.addLocusAlign(l)
+      else
+        contig_align = RadPack::ContigAlignment.new(ref_strand_name)
+        contig_align.addLocusAlign(l)
+        assembly_align.addContigAlign(contig_align)
+      end
+    end
+  }
+  assembly_align_ary << assembly_align
 }
 puts "\nsequences aligned"
 puts
 
-assembly_scores.sort! { |i,j|
-    [j.getActOvrExpAlignments,j.compareRadTags] <=> [i.getActOvrExpAlignments,i.compareRadTags]
+assembly_scores.sort! { |i, j|
+  [j.getActOvrExpAlignments, j.compareRadTags] <=> [i.getActOvrExpAlignments, i.compareRadTags]
 }
 
-puts "writing results to file system..."
-summary_file = File.open("#{out_dir}/#{assem_score_file}",'w')
+puts 'writing results to file system...'
+summary_file = File.open("#{out_dir}/#{assem_score_file}", 'w')
 summary_file.print "ASSEMBLY SCORE SUMMARIES\n"
 summary_file.print "========================\n\n"
 summary_file.puts
 assembly_scores.each { |a|
-    puts
-    puts a.to_s
-    puts
-    summary_file.print a.to_f
-    summary_file.puts
+  puts
+  puts a.to_s
+  puts
+  summary_file.print a.to_f
+  summary_file.puts
 }
 summary_file.close
-alignment_file = File.open("#{out_dir}/#{assem_align_file}",'w')
-assembly_align_ary.sort! { |i,j|
-    (j.actual / j.expected) <=> (i.actual / i.expected)
+alignment_file = File.open("#{out_dir}/#{assem_align_file}", 'w')
+assembly_align_ary.sort! { |i, j|
+  (j.actual / j.expected) <=> (i.actual / i.expected)
 }
 alignment_file.print "ALIGNMENT SUMMARIES\n"
 alignment_file.print "===================\n\n"
 alignment_file.puts
 assembly_align_ary.each { |a|
-    alignment_file.print a.to_s
-    alignment_file.puts
+  alignment_file.print a.to_s
+  alignment_file.puts
 }
 alignment_file.close
-puts "finished"
+puts 'finished'
