@@ -196,6 +196,7 @@ assembly_scores.each { |assembly_score|
   %x(samtools sort #{assem_vid}_merged.bam #{assem_vid}_merged.sorted)
   %x(samtools index #{assem_vid}_merged.sorted.bam)
   %x(rm -f #{bowtie_idx_name}.*)
+  %x(rm -f #{bowtie_core_contigs_idx_name}.*)
   %x(rm -f #{assem_vid}.sam)
   %x(rm -f #{assem_vid}_cutsites.bam)
   %x(rm -f #{assem_vid}_radtags.bam)
