@@ -17,6 +17,12 @@ module RadPack
       @aligned_cut_sites = Integer($1)
     end
 
+    def setCoreCutResult(cut_output)
+      @cut_output = cut_output
+      @cut_output.match(/d (\d+) a/)
+      @aligned_core_cut_sites = Integer($1)
+    end
+
     def setRadResult(rad_output)
       @rad_output = rad_output
       @rad_output.match(/t:\s+(\d+)\s+\(/)
@@ -25,8 +31,10 @@ module RadPack
     end
 
     def getActOvrExpAlignments
-      if !@aligned_rad_tags.nil? && !@aligned_cut_sites.nil? && @aligned_cut_sites != 0
-        (1000.0 * @aligned_rad_tags) / (2000.0 * @aligned_cut_sites)
+      if !@aligned_rad_tags.nil? &&
+          !@aligned_cut_sites.nil? && @aligned_cut_sites != 0 &&
+          !@aligned_core_cut_sites.nil? && @aligned_core_cut_sites != 0
+        (1000.0 * @aligned_rad_tags) / (1000.0 * (@aligned_cut_sites + @aligned_core_cut_sites))
       else
         -1
       end
@@ -43,14 +51,26 @@ module RadPack
     def to_s
       alignments = getActOvrExpAlignments
       if alignments == -1
-        alignments = "NO CUT SITES ALIGNED TO REFERENCE"
+        alignments = 'NO CUT SITES ALIGNED TO REFERENCE'
       end
-      "FILE NAME: #{@name}\nNUMBER OF CUT SITES ALIGNED: #{@aligned_cut_sites}\nNUMBER OF RAD TAGS ALIGNED: #{@aligned_rad_tags}\nRAD SNP MISMATCHES: #{@rad_mismatches}\nACTUAL / EXPECTED: #{alignments}\n"
+      "FILE NAME: #{@name}
+NUMBER OF CUT SITES ALIGNED: #{@aligned_cut_sites}
+NUMBER OF CORE CUT SITES ALIGNED: #{@aligned_core_cut_sites}
+NUMBER OF RAD TAGS ALIGNED: #{@aligned_rad_tags}
+RAD SNP MISMATCHES: #{@rad_mismatches}
+ACTUAL: #{@aligned_rad_tags}
+EXPECTED: #{@aligned_cut_sites + @aligned_core_cut_sites}
+ACTUAL / EXPECTED: #{alignments}\n"
     end
 
     def to_f
       self.to_s +
-          "BOWTIE CUT SITE OUTPUT:\n--\n#{@cut_output}--\nBOWTIE RAD TAG OUTPUT:\n--\n#{@rad_output}--\n"
+          "BOWTIE CUT SITE OUTPUT:
+--
+#{@cut_output}--
+BOWTIE RAD TAG OUTPUT:
+--
+#{@rad_output}--\n"
     end
   end
 end

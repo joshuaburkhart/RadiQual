@@ -184,7 +184,11 @@ assembly_scores.each { |assembly_score|
     %x(mkdir -p #{assem_dir})
   end
 
-  assembly_score.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_core_contigs_idx_name} #{cut_seq} 2>&1))
+  assembly_score.setCoreCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_core_contigs_idx_name} #{cut_seq} 2>&1))
+  %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
+  %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
+
+  assembly_score.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} 2>&1))
   %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
 
