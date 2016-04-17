@@ -2,6 +2,9 @@
 
 a project to assess genome assembly quality using RAD sequence alignment
 
+## Schematic
+![Radiqual Schematic](vis/Radiqual_Schematic.png)
+
 ## Instructions
 
 1. Filter RAD tags with either `src/ustacks_rad.sh` or `src/streis_rad.sh` depending on RAD file format.
