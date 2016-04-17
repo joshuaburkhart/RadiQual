@@ -96,6 +96,7 @@ ARGV.each { |assem_file|
 puts
 
 max_tag_length = -1
+CONTIG_CORE_CAPTURE_RGX = /[atcgnATCGN]{100}([atcgnATCGN]+)[atcgnATCGN]{100}/
 MISMATCH_CHAR = '>'
 BEST = '--best'
 ROUT = '--refout'
@@ -109,11 +110,11 @@ puts 'validating RAD tags...'
 while rad_fasta_line
   print '.'
   STDOUT.flush
-  if rad_fasta_line.match(/^>/)
+  if /^>/.match(rad_fasta_line)
     rad_tag_name = rad_fasta_line
   else
     test_seq = rad_fasta_line[0, se_seq_size]
-    if !test_seq.match(/^[ATCG]/)
+    if !/^[ATCG]/.match(test_seq)
       puts 'MALFORMED FASTA FILE DETECTED'
       puts "TAG NAME: #{rad_tag_name}"
       exit 1
@@ -143,14 +144,36 @@ cut_seq_size = cut_seq.size
 MAX_MISMATCHES = 3
 
 puts 'aligning sequences to reference(s)...'
-assembly_scores.each { |a|
+assembly_scores.each { |assembly_score|
   print '.'
   STDOUT.flush
-  contigs_fa_file = a.name
+  contigs_fa_fn = assembly_score.name
+  core_contigs_fa_fn = "#{assembly_score.name}_core.fasta"
+  contigs_fa_fh = File.open(contigs_fa_fn)
+  core_contigs_fa_fh = File.open(core_contigs_fa_fn, 'w')
+  header='< default contig core header'
+  while contigs_fa_fn_line = contigs_fa_fh.gets
+    if /^>/.match(contigs_fa_fn_line)
+      puts contigs_fa_fn_line
+      header = contigs_fa_fn_line.strip()
+    else
+      if CONTIG_CORE_CAPTURE_RGX.match(contigs_fa_fn_line)
+        contig_core = $1
+        if !contig_core.nil? and contig_core.length > 0
+          core_contigs_fa_fh.print "#{header}\n"
+          core_contigs_fa_fh.print "#{contig_core}\n"
+        end
+      end
+    end
+  end
+  contigs_fa_fh.close
+  core_contigs_fa_fh.close
   bowtie_idx_name = Time.new.to_f.to_s.sub('.', '_')
+  bowtie_core_contigs_idx_name = "#{Time.new.to_f.to_s.sub('.', '_')}_core_contigs"
   sleep(1) #assuring a new Time
-  %x(bowtie-build #{contigs_fa_file} #{bowtie_idx_name})
-  assem_dir_name = contigs_fa_file.strip.insert(0, "RadiQual_Track_#{bowtie_idx_name}").gsub('.', '_').gsub('/', '-').gsub(' ', '_')
+  %x(bowtie-build #{contigs_fa_fn} #{bowtie_idx_name})
+  %x(bowtie-build #{core_contigs_fa_fn} #{bowtie_core_contigs_idx_name})
+  assem_dir_name = contigs_fa_fn.strip.insert(0, "RadiQual_Track_#{bowtie_idx_name}").gsub('.', '_').gsub('/', '-').gsub(' ', '_')
   assem_dir = "#{out_dir}/#{assem_dir_name}"
   assem_vid = "#{assem_dir}/#{bowtie_idx_name}"
   if File.exists? assem_dir
@@ -161,11 +184,11 @@ assembly_scores.each { |a|
     %x(mkdir -p #{assem_dir})
   end
 
-  a.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} 2>&1))
+  assembly_score.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_core_contigs_idx_name} #{cut_seq} 2>&1))
   %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
 
-  a.setRadResult(%x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} 2>&1))
+  assembly_score.setRadResult(%x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} 2>&1))
   %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_radtags.bam)
 
@@ -178,10 +201,10 @@ assembly_scores.each { |a|
   %x(rm -f #{assem_vid}_radtags.bam)
   %x(rm -f #{assem_vid}_merged.bam)
 
-  assembly_align = RadPack::AssemblyAlignment.new(a.name)
+  assembly_align = RadPack::AssemblyAlignment.new(assembly_score.name)
   tmp_locus_ary = Array.new
-  a.cut_output.each_line { |line|
-    unless line.match(/^#|Reported/)
+  assembly_score.cut_output.each_line { |line|
+    unless /^#|Reported/.match(line)
       line_ary = line.split
       fr = line_ary[1]
       ref_strand_name = line_ary[2]
@@ -193,8 +216,8 @@ assembly_scores.each { |a|
     end
   }
 
-  a.rad_output.each_line { |line|
-    unless line.match(/^#|Reported/)
+  assembly_score.rad_output.each_line { |line|
+    unless /^#|Reported/.match(line)
       line_ary = line.split
       tag_name = line_ary[0]
       fr = line_ary[1]
@@ -218,14 +241,14 @@ assembly_scores.each { |a|
       if !tmp_idx.nil?
         locus_align = tmp_locus_ary[tmp_idx]
         locus_align.addRadTagAlign(rad_tag_align)
-        if ref_strand_name.match(/length_([0-9]+)_cov/)
+        if /length_([0-9]+)_cov/.match(ref_strand_name)
           n = Integer($1)
         else
           puts 'WARNING: IRREGULAR CONTIG NAME. REVERTING TO CMD LINE TOOLS FOR PARSING'
           if %x(uname).strip() == "Linux"
-            n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | grep -Po '(?<=#{ref_strand_name}).+(?=>)' | wc | awk -F' ' '{print $3}'))
+            n = Integer(%x(echo "$(cat #{assembly_score.name})>" | tr -d '\n' | grep -Po '(?<=#{ref_strand_name}).+(?=>)' | wc | awk -F' ' '{print $3}'))
           elsif %x(uname).strip() == "Darwin"
-            n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | perl -nle 'print $& if m{(?<=#{ref_strand_name}).+(?=>)}' | wc | awk -F' ' '{print $3}'))
+            n = Integer(%x(echo "$(cat #{assembly_score.name})>" | tr -d '\n' | perl -nle 'print $1 if m{(?<=#{ref_strand_name}).+(?=>)}' | wc | awk -F' ' '{print $3}'))
           else
             puts "ERROR: '#{%x(uname)}' OS not supported"
             exit(1)
@@ -236,7 +259,6 @@ assembly_scores.each { |a|
         puts 'WARNING: RAD TAG MATCHED LOCUS WITHOUT CUTSITE'
         puts " RAD TAG: #{rad_tag_align.to_s}"
         puts " LOCUS: #{locus_name}"
-
       end
     end
   }
@@ -248,24 +270,24 @@ assembly_scores.each { |a|
       if l.rad_tag_align_ary.size < l.expected
         if l.n == 0
           ref_strand_name = l.ref_strand_name
-          if ref_strand_name.match(/length_([0-9]+)_cov/)
-            n = Integer($1)
+        end
+        if /length_([0-9]+)_cov/.match(ref_strand_name)
+          n = Integer($1)
+        else
+          puts 'WARNING: IRREGULAR CONTIG NAME. REVERTING TO CMD LINE TOOLS FOR PARSING'
+          if %x(uname).strip() == "Linux"
+            n = Integer(%x(echo "$(cat #{assembly_score.name})>" | tr -d '\n' | grep -Po '(?<=#{ref_strand_name}).+(?=>)' | wc | awk -F' ' '{print $3}'))
+          elsif %x(uname).strip() == "Darwin"
+            n = Integer(%x(echo "$(cat #{assembly_score.name})>" | tr -d '\n' | perl -nle 'print $1 if m{(?<=#{ref_strand_name}).+(?=>)}' | wc | awk -F' ' '{print $3}'))
           else
-            puts 'WARNING: IRREGULAR CONTIG NAME. REVERTING TO CMD LINE TOOLS FOR PARSING'
-            if %x(uname).strip() == "Linux"
-            n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | grep -Po '(?<=#{ref_strand_name}).+(?=>)' | wc | awk -F' ' '{print $3}'))
-            elsif %x(uname).strip() == "Darwin"
-              n = Integer(%x(echo "$(cat #{a.name})>" | tr -d '\n' | perl -nle 'print $& if m{(?<=#{ref_strand_name}).+(?=>)}' | wc | awk -F' ' '{print $3}'))
-            else
-              puts "ERROR: '#{%x(uname)}' OS not supported"
-              exit(1)
-            end
+            puts "ERROR: '#{%x(uname)}' OS not supported"
+            exit(1)
           end
-          l.n = n
         end
-        if l.n - l.offset < max_tag_length
-          l.expected -= 1
-        end
+        l.n = n
+      end
+      if l.n - l.offset < max_tag_length
+        l.expected -= 1
       end
     end
     #puts "l.offset: #{l.offset}"
@@ -298,23 +320,23 @@ summary_file = File.open("#{out_dir}/#{assem_score_file}", 'w')
 summary_file.print "ASSEMBLY SCORE SUMMARIES\n"
 summary_file.print "========================\n\n"
 summary_file.puts
-assembly_scores.each { |a|
+assembly_scores.each { |assembly_score|
   puts
-  puts a.to_s
+  puts assembly_score.to_s
   puts
-  summary_file.print a.to_f
+  summary_file.print assembly_score.to_f
   summary_file.puts
 }
 summary_file.close
 alignment_file = File.open("#{out_dir}/#{assem_align_file}", 'w')
 assembly_align_ary.sort! { |i, j|
-  (j.actual / j.expected) <=> (i.actual / i.expected)
+  (j.expected > 0 ? (j.actual / j.expected) : 0) <=> (i.expected > 0 ? (i.actual / i.expected) : 0)
 }
 alignment_file.print "ALIGNMENT SUMMARIES\n"
 alignment_file.print "===================\n\n"
 alignment_file.puts
-assembly_align_ary.each { |a|
-  alignment_file.print a.to_s
+assembly_align_ary.each { |assembly_alignment|
+  alignment_file.print assembly_alignment.to_s
   alignment_file.puts
 }
 alignment_file.close
