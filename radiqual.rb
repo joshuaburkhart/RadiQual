@@ -96,16 +96,12 @@ ROUT = '--refout'
 rad_tags = File.open(rad_fasta_file)
 rad_fasta_line = rad_tags.gets
 rad_tag_name = '<unknown>'
-<<<<<<< HEAD
 cut_seq = "#{ce_seq}#{se_seq}"
 puts "ce_seq = #{ce_seq}"
 puts "se_seq = #{se_seq}"
 puts "cut_seq = #{cut_seq}"
 puts "cut_seq.size = #{cut_seq.size}"
 se_seq_size = se_seq.size
-=======
-rec_seq_size = rec_seq.size
->>>>>>> d73d7a810dc587c45a5f71de41910b5cb2226c7d
 puts 'validating RAD tags...'
 while rad_fasta_line
   print '.'
@@ -140,15 +136,10 @@ rad_tags.close
 assembly_align_ary = Array.new
 
 #bowtie args
-<<<<<<< HEAD
 cut_seq_size = cut_seq.size
 puts "cut_seq.size = #{cut_seq.size}"
 puts "cut_seq_size = #{cut_seq_size}"
 MAX_MISMATCHES = 2
-=======
-rec_seq_size = rec_seq.size
-MAX_MISMATCHES = 3
->>>>>>> d73d7a810dc587c45a5f71de41910b5cb2226c7d
 
 puts 'aligning sequences to reference(s)...'
 assembly_scores.each { |assembly_score|
@@ -190,7 +181,6 @@ assembly_scores.each { |assembly_score|
   else
     %x(mkdir -p #{assem_dir})
   end
-<<<<<<< HEAD
 
   puts "sam 1"
   assembly_score.setCoreCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_core_contigs_idx_name} #{cut_seq} 2>&1))
@@ -215,26 +205,6 @@ assembly_scores.each { |assembly_score|
   %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
 
   puts "sam 3.7"
-=======
-  commandString = "bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_core_contigs_idx_name} #{rec_seq} 2>&1"
-  puts "COMMAND_STRING0 #{commandString} END_COMMAND_STRING"
-params = %x(#{commandString})
-  puts "PARAMS0 #{params} END_PARAMS"
-  assembly_score.setCoreCutResult(params)
-  %x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_idx_name} #{rec_seq} --sam #{assem_vid}.sam)
-  %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
-
-  assembly_score.setCutResult(%x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_idx_name} #{rec_seq} 2>&1))
-  %x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_idx_name} #{rec_seq} --sam #{assem_vid}.sam)
-  %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
-
-  commandString = "bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{rec_seq_size} #{BEST} -f #{rad_fasta_file} 2>&1"
-puts "COMMAND_STRING1 #{commandString} END_COMMAND_STRING1"
-  params = %x(#{commandString})
-puts "PARAMS1 #{params} END_PARAMS"
-  assembly_score.setRadResult(params)
-  %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{rec_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
->>>>>>> d73d7a810dc587c45a5f71de41910b5cb2226c7d
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_radtags.bam)
 
   puts "sam 4"
