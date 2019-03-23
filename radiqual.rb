@@ -96,12 +96,8 @@ ROUT = '--refout'
 rad_tags = File.open(rad_fasta_file)
 rad_fasta_line = rad_tags.gets
 rad_tag_name = '<unknown>'
-cut_seq = "#{ce_seq}#{se_seq}"
-puts "ce_seq = #{ce_seq}"
-puts "se_seq = #{se_seq}"
-puts "cut_seq = #{cut_seq}"
-puts "cut_seq.size = #{cut_seq.size}"
-se_seq_size = se_seq.size
+puts "rec_seq = #{rec_seq}"
+puts "rec_seq.size = #{rec_seq.size}"
 puts 'validating RAD tags...'
 while rad_fasta_line
   print '.'
@@ -109,7 +105,7 @@ while rad_fasta_line
   if /^>/.match(rad_fasta_line)
     rad_tag_name = rad_fasta_line
   else
-    test_seq = rad_fasta_line[0, rec_seq_size]
+    test_seq = rad_fasta_line[0, rec_seq.size]
     if !/^[ATCG]/.match(test_seq)
       puts 'MALFORMED FASTA FILE DETECTED'
       puts "TAG NAME: #{rad_tag_name}"
@@ -136,9 +132,9 @@ rad_tags.close
 assembly_align_ary = Array.new
 
 #bowtie args
-cut_seq_size = cut_seq.size
-puts "cut_seq.size = #{cut_seq.size}"
-puts "cut_seq_size = #{cut_seq_size}"
+rec_seq_size = rec_seq.size
+puts "rec_seq.size = #{rec_seq.size}"
+puts "rec_seq_size = #{rec_seq_size}"
 MAX_MISMATCHES = 2
 
 puts 'aligning sequences to reference(s)...'
@@ -183,26 +179,26 @@ assembly_scores.each { |assembly_score|
   end
 
   puts "sam 1"
-  assembly_score.setCoreCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_core_contigs_idx_name} #{cut_seq} 2>&1))
-  %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
+  assembly_score.setCoreCutResult(%x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_core_contigs_idx_name} #{rec_seq} 2>&1))
+  %x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_idx_name} #{rec_seq} --sam #{assem_vid}.sam)
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
 
   puts "sam 2"
-  assembly_score.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} 2>&1))
-  %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
+  assembly_score.setCutResult(%x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_idx_name} #{rec_seq} 2>&1))
+  %x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_idx_name} #{rec_seq} --sam #{assem_vid}.sam)
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
 
   puts "sam 3"
-  puts "bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file}"
+  puts "bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{rec_seq_size} #{BEST} -f #{rad_fasta_file}"
 
   puts "sam 3.4"
-  %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} > validation.debug.stdout 2> validation.debug.stderr)
+  %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{rec_seq_size} #{BEST} -f #{rad_fasta_file} > validation.debug.stdout 2> validation.debug.stderr)
 
   puts "sam 3.5"
-  assembly_score.setRadResult(%x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} 2>&1))
+  assembly_score.setRadResult(%x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{rec_seq_size} #{BEST} -f #{rad_fasta_file} 2>&1))
 
   puts "sam 3.6"
-  %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
+  %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{rec_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
 
   puts "sam 3.7"
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_radtags.bam)
