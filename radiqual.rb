@@ -96,6 +96,7 @@ ARGV.each { |assem_file|
 puts
 
 max_tag_length = -1
+
 CONTIG_CORE_CAPTURE_RGX = /[atcgnATCGN]{100}([atcgnATCGN]+)[atcgnATCGN]{100}/
 MISMATCH_CHAR = '>'
 BEST = '--best'
@@ -105,6 +106,10 @@ rad_tags = File.open(rad_fasta_file)
 rad_fasta_line = rad_tags.gets
 rad_tag_name = '<unknown>'
 cut_seq = "#{ce_seq}#{se_seq}"
+puts "ce_seq = #{ce_seq}"
+puts "se_seq = #{se_seq}"
+puts "cut_seq = #{cut_seq}"
+puts "cut_seq.size = #{cut_seq.size}"
 se_seq_size = se_seq.size
 puts 'validating RAD tags...'
 while rad_fasta_line
@@ -141,7 +146,9 @@ assembly_align_ary = Array.new
 
 #bowtie args
 cut_seq_size = cut_seq.size
-MAX_MISMATCHES = 3
+puts "cut_seq.size = #{cut_seq.size}"
+puts "cut_seq_size = #{cut_seq_size}"
+MAX_MISMATCHES = 2
 
 puts 'aligning sequences to reference(s)...'
 assembly_scores.each { |assembly_score|
@@ -184,21 +191,41 @@ assembly_scores.each { |assembly_score|
     %x(mkdir -p #{assem_dir})
   end
 
+  puts "sam 1"
   assembly_score.setCoreCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_core_contigs_idx_name} #{cut_seq} 2>&1))
   %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
 
+  puts "sam 2"
   assembly_score.setCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} 2>&1))
   %x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_idx_name} #{cut_seq} --sam #{assem_vid}.sam)
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
 
+  puts "sam 3"
+  puts "bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file}"
+
+  puts "sam 3.4"
+  %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} > validation.debug.stdout 2> validation.debug.stderr)
+
+  puts "sam 3.5"
   assembly_score.setRadResult(%x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} 2>&1))
+
+  puts "sam 3.6"
   %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
+
+  puts "sam 3.7"
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_radtags.bam)
 
+  puts "sam 4"
   %x(samtools merge #{assem_vid}_merged.bam #{assem_vid}_cutsites.bam #{assem_vid}_radtags.bam)
+
+  puts "sam 5"
   %x(samtools sort #{assem_vid}_merged.bam #{assem_vid}_merged.sorted)
+
+  puts "sam 6"
   %x(samtools index #{assem_vid}_merged.sorted.bam)
+
+  puts "sam 7"
   %x(rm -f #{bowtie_idx_name}.*)
   %x(rm -f #{bowtie_core_contigs_idx_name}.*)
   %x(rm -f #{assem_vid}.sam)
