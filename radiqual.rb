@@ -35,14 +35,9 @@ Example:     $ ./radiqual.rb -c C -s CGTAG -t data/input/mock_rad_tags.fasta -o 
     puts opts
     exit
   }
-  options[:cohesive_end] = nil
-  opts.on('-c', '--cohesive SEQ', 'Cohesive End Sequence SEQ') { |seq|
-    options[:cohesive_end] = seq
-  }
-  options[:sticky_end] = nil
-  opts.on('-s', '--sticky SEQ', 'Sticky End Sequence SEQ') { |seq|
-    options[:sticky_end] = seq
-  }
+  options[:rec_seq] = nil
+  opts.on('-r', '--recognition_sequence SEQUENCE','Restriction enzyme recognition sequence') { |seq|
+    options[:rec_seq] = seq}
   options[:rad_tag_file] = nil
   opts.on('-t', '--tag_file FILE', 'File Containing List of RAD Tags FILE') { |file|
     options[:rad_tag_file] = file
@@ -61,10 +56,8 @@ Example:     $ ./radiqual.rb -c C -s CGTAG -t data/input/mock_rad_tags.fasta -o 
 }
 
 optparse.parse!
-if options[:cohesive_end].nil?
-  raise OptionParser::MissingArgument, "Cohesive End = \'#{options[:cohesive_end]}\'"
-elsif options[:sticky_end].nil?
-  raise OptionParser::MissingArgument, "Sticky End = \'#{options[:sticky_end]}\'"
+if options[:rec_seq].nil?
+  raise OptionParser::MissingArgument, "Recognition Sequence = \'#{options[:rec_seq]}\'"
 elsif options[:rad_tag_file].nil?
   raise OptionParser::MissingArgument, "RAD Tag File = \'#{options[:rad_tag_file]}\'"
 end
@@ -74,16 +67,14 @@ end
 ##########
 
 exec_id = Integer(Time.new)
-ce_seq = options[:cohesive_end]
-se_seq = options[:sticky_end]
+rec_seq = options[:rec_seq]
 rad_fasta_file = options[:rad_tag_file]
 out_dir = options[:out_dir]
 assem_score_file = "assembly_scores.#{exec_id}.txt"
 assem_align_file = "assembly_aligns.#{exec_id}.txt"
 
 puts "EXECUTION ID: #{exec_id}"
-puts "COHESIVE END SEQ: #{ce_seq}"
-puts "STICKY END SEQ: #{se_seq}"
+puts "RECOGNITION SEQ: #{rec_seq}"
 puts "RAD FASTA FILE: #{rad_fasta_file}"
 puts "OUTPUT DIR: #{out_dir}"
 puts 'ASSEMBLY FILES: '
@@ -105,12 +96,16 @@ ROUT = '--refout'
 rad_tags = File.open(rad_fasta_file)
 rad_fasta_line = rad_tags.gets
 rad_tag_name = '<unknown>'
+<<<<<<< HEAD
 cut_seq = "#{ce_seq}#{se_seq}"
 puts "ce_seq = #{ce_seq}"
 puts "se_seq = #{se_seq}"
 puts "cut_seq = #{cut_seq}"
 puts "cut_seq.size = #{cut_seq.size}"
 se_seq_size = se_seq.size
+=======
+rec_seq_size = rec_seq.size
+>>>>>>> d73d7a810dc587c45a5f71de41910b5cb2226c7d
 puts 'validating RAD tags...'
 while rad_fasta_line
   print '.'
@@ -118,17 +113,17 @@ while rad_fasta_line
   if /^>/.match(rad_fasta_line)
     rad_tag_name = rad_fasta_line
   else
-    test_seq = rad_fasta_line[0, se_seq_size]
+    test_seq = rad_fasta_line[0, rec_seq_size]
     if !/^[ATCG]/.match(test_seq)
       puts 'MALFORMED FASTA FILE DETECTED'
       puts "TAG NAME: #{rad_tag_name}"
       exit 1
-    elsif test_seq != se_seq
+    elsif test_seq != rec_seq
       rad_tags.close
       puts 'RAD TAG DOES NOT MATCH SPECIFIED CUT SITE'
       puts "TAG NAME: #{rad_tag_name}"
-      puts "TAG FIRST #{se_seq_size} BASES: #{test_seq}"
-      puts "SPECIFIED CUT SITE SE SEQ: #{se_seq}"
+      puts "TAG FIRST #{rec_seq_size} BASES: #{test_seq}"
+      puts "SPECIFIED CUT SITE SE SEQ: #{rec_seq}"
       exit 1
     end
   end
@@ -145,10 +140,15 @@ rad_tags.close
 assembly_align_ary = Array.new
 
 #bowtie args
+<<<<<<< HEAD
 cut_seq_size = cut_seq.size
 puts "cut_seq.size = #{cut_seq.size}"
 puts "cut_seq_size = #{cut_seq_size}"
 MAX_MISMATCHES = 2
+=======
+rec_seq_size = rec_seq.size
+MAX_MISMATCHES = 3
+>>>>>>> d73d7a810dc587c45a5f71de41910b5cb2226c7d
 
 puts 'aligning sequences to reference(s)...'
 assembly_scores.each { |assembly_score|
@@ -190,6 +190,7 @@ assembly_scores.each { |assembly_score|
   else
     %x(mkdir -p #{assem_dir})
   end
+<<<<<<< HEAD
 
   puts "sam 1"
   assembly_score.setCoreCutResult(%x(bowtie -a -n0 -l#{cut_seq_size} -c #{bowtie_core_contigs_idx_name} #{cut_seq} 2>&1))
@@ -214,6 +215,26 @@ assembly_scores.each { |assembly_score|
   %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{se_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
 
   puts "sam 3.7"
+=======
+  commandString = "bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_core_contigs_idx_name} #{rec_seq} 2>&1"
+  puts "COMMAND_STRING0 #{commandString} END_COMMAND_STRING"
+params = %x(#{commandString})
+  puts "PARAMS0 #{params} END_PARAMS"
+  assembly_score.setCoreCutResult(params)
+  %x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_idx_name} #{rec_seq} --sam #{assem_vid}.sam)
+  %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
+
+  assembly_score.setCutResult(%x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_idx_name} #{rec_seq} 2>&1))
+  %x(bowtie -a -n0 -l#{rec_seq_size} -c #{bowtie_idx_name} #{rec_seq} --sam #{assem_vid}.sam)
+  %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_cutsites.bam)
+
+  commandString = "bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{rec_seq_size} #{BEST} -f #{rad_fasta_file} 2>&1"
+puts "COMMAND_STRING1 #{commandString} END_COMMAND_STRING1"
+  params = %x(#{commandString})
+puts "PARAMS1 #{params} END_PARAMS"
+  assembly_score.setRadResult(params)
+  %x(bowtie #{bowtie_idx_name} -n#{MAX_MISMATCHES} -l#{rec_seq_size} #{BEST} -f #{rad_fasta_file} --sam #{assem_vid}.sam)
+>>>>>>> d73d7a810dc587c45a5f71de41910b5cb2226c7d
   %x(samtools view -bS #{assem_vid}.sam > #{assem_vid}_radtags.bam)
 
   puts "sam 4"
@@ -250,19 +271,27 @@ assembly_scores.each { |assembly_score|
 
   assembly_score.rad_output.each_line { |line|
     unless /^#|Reported/.match(line)
+      puts "LINE #{line} END_LINE"
       line_ary = line.split
       tag_name = line_ary[0]
+      puts "TAG_NAME #{tag_name} END_TAG_NAME"
       fr = line_ary[1]
+      puts "FR #{fr} END_FR"
       ref_strand_name = line_ary[2]
+      puts "REF_STRAND_NAME #{ref_strand_name} END_REF_STRAND_NAME"
       offset = Integer(line_ary[3])
+      puts "OFFSET #{offset} END_OFFSET"
       seq = line_ary[4]
+      puts "SEQ #{seq} END_SEQ"
       rad_tag_align = RadPack::RadTagAlignment.new(tag_name, ref_strand_name, seq, offset, fr)
+      puts "RAD_TAG_ALIGN #{rad_tag_align} END_RAD_TAG_ALIGN"
       locus_name = ref_strand_name
+      puts "LOCUS_NAME #{locus_name} END_LOCUS_NAME"
       if fr == '+'
-        x = offset - ce_seq.size
+        x = offset
         locus_name += "-#{x}"
       elsif fr == '-'
-        x = (offset + seq.size) - se_seq_size
+        x = (offset + seq.size)
         locus_name += "-#{x}"
       else
         puts "ERROR: RAD ALIGNMENT DIRECTION '#{fr}' UNRECOGNIZABLE"
@@ -270,6 +299,7 @@ assembly_scores.each { |assembly_score|
       end
 
       tmp_idx = tmp_locus_ary.index { |l| l.name == locus_name }
+      puts "TMP_IDX #{tmp_idx} END_TMP_IDX"
       if !tmp_idx.nil?
         locus_align = tmp_locus_ary[tmp_idx]
         locus_align.addRadTagAlign(rad_tag_align)
